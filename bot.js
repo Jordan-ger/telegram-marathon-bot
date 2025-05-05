@@ -217,6 +217,32 @@ bot.on('text', async (ctx) => {
     const closestBalance = entries.reduce((prev, curr) =>
       Math.abs(curr.balanceNum - finalBalance) < Math.abs(prev.balanceNum - finalBalance) ? curr : prev
     );
+// Отправка победителям
+try {
+  await bot.telegram.sendMessage(closestX.telegramID, `🎉 Поздравляем! Вы победили по максимальному X с результатом: ${closestX.maxX}`);
+} catch (e) {
+  console.error(`Не удалось отправить сообщение победителю X (${closestX.telegramID}):`, e);
+}
+
+try {
+  await bot.telegram.sendMessage(closestBalance.telegramID, `🎉 Поздравляем! Вы победили по конечному балансу с результатом: ${closestBalance.finalBalance}`);
+} catch (e) {
+  console.error(`Не удалось отправить сообщение победителю Balance (${closestBalance.telegramID}):`, e);
+}
+
+// Формируем список участников
+const participantList = entries.map((p, i) =>
+  `${i + 1}. ${p.telegramName} | VodkaID: ${p.vodkaID} | Kick: ${p.kickNick} | Max X: ${p.maxX} | Final Balance: ${p.finalBalance}`
+).join('\n');
+
+// Рассылаем всем участникам
+for (const p of entries) {
+  try {
+    await bot.telegram.sendMessage(p.telegramID, `📋 Список участников марафона:\n\n${participantList}`);
+  } catch (e) {
+    console.error(`Не удалось отправить участнику (${p.telegramID}):`, e);
+  }
+}
 
     return ctx.reply(
       `📊 Расчёт завершён\n\n` +
@@ -226,7 +252,9 @@ bot.on('text', async (ctx) => {
       `🏆 Победитель по Final Balance:\n👤 ${closestBalance.telegramName} — ${closestBalance.finalBalance}`
     );
   }
-});
+})
+
+;
 
 // Запуск бота
 bot.launch();

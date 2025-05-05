@@ -2,8 +2,9 @@ const { Telegraf, Scenes, session, Markup } = require('telegraf');
 const fs = require('fs');
 
 // === Настройки ===
-const BOT_TOKEN = '7088809054:AAEz2xMrDsnmIpms7JFqy_uSZ0jHZd-zgUo';
-const ADMIN_ID = 1704458173;
+require('dotenv').config();
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const ADMIN_ID = Number(process.env.ADMIN_ID);
 const DATA_FILE = 'participants.json';
 const LOCK_FILE = 'lock.json'; // Файл для блокировки
 

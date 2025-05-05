@@ -4,7 +4,7 @@ const fs = require('fs');
 // === Настройки ===
 require('dotenv').config();
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const ADMIN_ID = Number(process.env.ADMIN_ID);
+const ADMIN_IDS = process.env.ADMIN_IDS.split(',').map(id => Number(id.trim()));
 const DATA_FILE = 'participants.json';
 const LOCK_FILE = 'lock.json'; // Файл для блокировки
 
@@ -47,60 +47,46 @@ const formWizard = new Scenes.WizardScene(
     }
 
     ctx.wizard.state.data = {};
-    await ctx.reply('Введите ваш ID от 🍾Vodka.bet:');
+    await ctx.reply('Введите ваш ID от 🍾Vodka.bet (только английские буквы):');
     return ctx.wizard.next();
   },
 
   async (ctx) => {
-    if (ctx.message.text === '⬅️ Назад') {
-      return ctx.scene.leave();
+    const vodkaID = ctx.message.text.trim();
+    if (!/^[a-zA-Z0-9]+$/.test(vodkaID)) {
+      return ctx.reply('❌ ID должен содержать только английские буквы и цифры. Попробуйте снова:');
     }
-    if (ctx.message.text === '🔁 Рестарт') {
-      return ctx.wizard.selectStep(0);
+    ctx.wizard.state.data.vodkaID = vodkaID;
+    await ctx.reply('Введите ваш Никнейм на Kick (только английские буквы):');
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    const kickNick = ctx.message.text.trim();
+    if (!/^[a-zA-Z0-9]+$/.test(kickNick)) {
+      return ctx.reply('❌ Никнейм должен содержать только английские буквы и цифры. Попробуйте снова:');
     }
-    ctx.wizard.state.data.vodkaID = ctx.message.text;
-    await ctx.reply('Введите ваш Никнейм на Kick:');
+    ctx.wizard.state.data.kickNick = kickNick;
+    await ctx.reply('🤔 Введите максимальный X за сегодняшний день (только число):');
     return ctx.wizard.next();
   },
 
   async (ctx) => {
-    if (ctx.message.text === '⬅️ Назад') {
-        await ctx.reply('Введите ваш ID от 🍾Vodka.bet:');
-        return ctx.wizard.selectStep(1);
-      }
-      if (ctx.message.text === '🔁 Рестарт') {
-        await ctx.reply('Начинаем заново.');
-        return ctx.wizard.selectStep(0);
-      }
-    ctx.wizard.state.data.kickNick = ctx.message.text;
-    await ctx.reply('🤔Введите какой будет максимальный X за сегодняшний день марафона:');
+    const maxX = ctx.message.text.trim().replace(',', '.');
+    if (!/^\d+(\.\d+)?$/.test(maxX)) {
+      return ctx.reply('❌ Максимальный X должен быть числом. Попробуйте снова:');
+    }
+    ctx.wizard.state.data.maxX = maxX;
+    await ctx.reply('🧐 Введите конечный баланс за сегодняшний день (только число):');
     return ctx.wizard.next();
   },
 
   async (ctx) => {
-    if (ctx.message.text === '⬅️ Назад') {
-        await ctx.reply('Введите ваш ID от 🍾Vodka.bet:');
-        return ctx.wizard.selectStep(1);
-      }
-      if (ctx.message.text === '🔁 Рестарт') {
-        await ctx.reply('Начинаем заново.');
-        return ctx.wizard.selectStep(0);
-      }
-    ctx.wizard.state.data.maxX = ctx.message.text;
-    await ctx.reply('🧐Введите какой будет Конечный баланс сегодняшнего дня марафона:');
-    return ctx.wizard.next();
-  },
-
-  async (ctx) => {
-    if (ctx.message.text === '⬅️ Назад') {
-        await ctx.reply('🤔Введите какой будет максимальный X за сегодняшний день марафона:');
-        return ctx.wizard.selectStep(3);
-      }
-      if (ctx.message.text === '🔁 Рестарт') {
-        await ctx.reply('Начинаем заново.');
-        return ctx.wizard.selectStep(0);
-      }
-    ctx.wizard.state.data.finalBalance = ctx.message.text;
+    const finalBalance = ctx.message.text.trim().replace(',', '.');
+    if (!/^\d+(\.\d+)?$/.test(finalBalance)) {
+      return ctx.reply('❌ Конечный баланс должен быть числом. Попробуйте снова:');
+    }
+    ctx.wizard.state.data.finalBalance = finalBalance;
 
     const id = String(ctx.from.id);
     participants[id] = {
@@ -109,7 +95,7 @@ const formWizard = new Scenes.WizardScene(
       ...ctx.wizard.state.data,
     };
     saveParticipants();
-    
+
     await ctx.reply('Спасибо! Вы успешно подали заявку ✅');
     return ctx.scene.leave();
   }
@@ -137,8 +123,8 @@ bot.hears('🎯 Участвовать в марафоне', (ctx) => ctx.scene.
 
 // Команда для администратора для сброса
 bot.command('reset', async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) {
-    return ctx.reply('⛔ У вас нет прав на сброс данных.');
+  if (!ADMIN_IDS.includes(ctx.from.id)) {
+    return ctx.reply('⛔ У вас нет прав использовать эту команду.');
   }
 
   participants = {};
@@ -153,8 +139,8 @@ bot.command('reset', async (ctx) => {
 
 // Команда для блокировки таблицы
 bot.command('lock', async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) {
-    return ctx.reply('⛔ У вас нет прав на блокировку данных.');
+  if (!ADMIN_IDS.includes(ctx.from.id)) {
+    return ctx.reply('⛔ У вас нет прав использовать эту команду.');
   }
 
   isLocked = true;
@@ -164,8 +150,8 @@ bot.command('lock', async (ctx) => {
 
 // Команда для разблокировки таблицы
 bot.command('unlock', async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) {
-    return ctx.reply('⛔ У вас нет прав на разблокировку данных.');
+  if (!ADMIN_IDS.includes(ctx.from.id)) {
+    return ctx.reply('⛔ У вас нет прав использовать эту команду.');
   }
 
   isLocked = false;
@@ -175,7 +161,7 @@ bot.command('unlock', async (ctx) => {
 
 // Команда для расчёта победителей
 bot.command('cal', async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) {
+  if (!ADMIN_IDS.includes(ctx.from.id)) {
     return ctx.reply('⛔ У вас нет прав использовать эту команду.');
   }
   awaitingFinals[ctx.from.id] = { step: 'awaiting_maxX' };

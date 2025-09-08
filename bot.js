@@ -1,14 +1,14 @@
-const { Telegraf } = require('telegraf');
-const fs = require('fs');
-require('dotenv').config();
+const { Telegraf } = require("telegraf");
+const fs = require("fs");
+require("dotenv").config(); // локально подгружает .env, на Railway будет игнорироваться
 
-// Читаем токен из .env
-const BOT_TOKEN = process.env.BOT_TOKEN;
+// Проверка токена
+console.log("BOT_TOKEN:", process.env.BOT_TOKEN ? "✅ найден" : "❌ нет");
 
-const bot = new Telegraf(BOT_TOKEN);
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Файл для хранения логинов
-const DATA_FILE = 'logins.json';
+// Файл для логинов
+const DATA_FILE = "logins.json";
 
 // Загружаем сохранённые логины
 let logins = {};
@@ -23,33 +23,22 @@ function saveLogins() {
 
 // Команда /start
 bot.start(async (ctx) => {
-  await ctx.reply(
-    `Привет! Мы на Балик в лицензионный казик закидываем. Депозит вносить не потребуется. Если что-то поднимешь, сможешь вывести на карту!  
-
-https://t.me/casinobetlink/10
-
-Регаешься по ссылке, с промокодом: UFO
-
-И как зарегаешься, напиши свой логин сюда. 
-Я переведу прямо на баланс!`
-  );
+  await ctx.reply("Бот работает! 🚀");
 });
 
 // Обработка сообщений (логины)
-bot.on('text', async (ctx) => {
+bot.on("text", async (ctx) => {
   const userId = String(ctx.from.id);
   const message = ctx.message.text.trim();
 
-  // Проверяем, сохранили ли уже логин
   if (logins[userId]) {
-    return ctx.reply('❌ Вы уже отправили логин. Второй раз нельзя.');
+    return ctx.reply("❌ Вы уже отправили логин. Второй раз нельзя.");
   }
 
-  // Сохраняем первый логин
   logins[userId] = {
-    telegramName: `${ctx.from.first_name || ''} ${ctx.from.last_name || ''}`.trim(),
+    telegramName: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim(),
     telegramID: userId,
-    username: ctx.from.username || '',
+    username: ctx.from.username || "",
     login: message,
   };
   saveLogins();
@@ -59,4 +48,4 @@ bot.on('text', async (ctx) => {
 
 // Запуск
 bot.launch();
-console.log('🤖 Бот запущен');
+console.log("🤖 Бот запущен");

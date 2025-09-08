@@ -2,18 +2,12 @@ const { Telegraf } = require('telegraf');
 const fs = require('fs');
 require('dotenv').config();
 
-import { Telegraf } from "telegraf";
-import dotenv from "dotenv";
-
-dotenv.config(); // подключаем .env (локально)
-
-const bot = new Telegraf(process.env.BOT_TOKEN);
-
-bot.start((ctx) => ctx.reply("Бот работает! 🚀"));
-bot.launch();
-
+// Читаем токен из .env
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
+const bot = new Telegraf(BOT_TOKEN);
+
+// Файл для хранения логинов
 const DATA_FILE = 'logins.json';
 
 // Загружаем сохранённые логины
@@ -62,8 +56,6 @@ bot.on('text', async (ctx) => {
 
   await ctx.reply(`✅ Логин "${message}" сохранён!`);
 });
-
-
 
 // Запуск
 bot.launch();

@@ -2,7 +2,6 @@ const { Telegraf } = require("telegraf");
 const fs = require("fs");
 require("dotenv").config(); // локально подгружает .env, на Railway будет игнорироваться
 
-console.log("BOT_TOKEN:", process.env.BOT_TOKEN ? "✅ найден" : "❌ нет");
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 

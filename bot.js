@@ -5,7 +5,7 @@ require("dotenv").config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // 🔑 Впиши свой Telegram ID сюда:
-const ADMIN_ID = 123456789; // замени на свой ID
+const ADMIN_ID = 1704458173; // замени на свой ID
 
 // Файл для логинов
 const DATA_FILE = "logins.json";

